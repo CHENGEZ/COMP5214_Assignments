@@ -106,15 +106,35 @@ test_loss = criterion(test_prediction, full_test_target)
 print("the loss on test data is", test_loss.item())
 
 
+predicted_numbers = []
+for i in range(10000):
+    predicted_number = torch.argmax(test_prediction[i]).item()
+    predicted_numbers.append(predicted_number)
+predicted_numbers = np.array(predicted_numbers)
+
+num_error = 0
+for truth, prediction in zip(test_labels, predicted_numbers):
+    if truth != prediction:
+        num_error += 1
+print("The accuracy on the testing data is", 1-num_error/10000)
+
 """
 test accuract depending on differnet num_of_neurons_in_hidden
-4: the loss on test data is 0.5520997686341712
-8: the loss on test data is 0.2870218555975418
-16: the loss on test data is 0.19988575598033148
-32: the loss on test data is 0.165200721723496
-64: the loss on test data is 0.15033791905283514
-128: the loss on test data is 0.14072852918090104
-256: the loss on test data is 0.13293400765137472
+4: the loss on test data is 0.5124706843365774
+   The accuracy on the testing data is 0.855
+8: the loss on test data is 0.2843984853701364
+   The accuracy on the testing data is 0.9202
+16: the loss on test data is 0.22133442593356567
+    The accuracy on the testing data is 0.9357
+32: the loss on test data is 0.1721920902196079
+    The accuracy on the testing data is 0.9493
+64: the loss on test data is 0.1563105991184248
+    The accuracy on the testing data is 0.9535
+128: the loss on test data is 0.13844306242942367
+     The accuracy on the testing data is 0.9589
+256: the loss on test data is 0.1314683234138732
+     The accuracy on the testing data is 0.9615
 
-without trainning: the loss on test data is 2.303080479717255
+without trainning: the loss on test data is 2.303334325838089
+                   The accuracy on the testing data is 0.09989999999999999
 """

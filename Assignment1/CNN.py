@@ -30,8 +30,8 @@ for i in range(10000):
 full_test_target = np.array(full_test_target)
 full_test_target = torch.from_numpy(full_test_target)
 
-full_train_data = full_train_data.reshape(60000,1,28,28)
-full_test_data = full_test_data.reshape(10000,1,28,28)
+full_train_data = full_train_data.reshape(60000, 1, 28, 28)
+full_test_data = full_test_data.reshape(10000, 1, 28, 28)
 
 
 class CNN(torch.nn.Module):
@@ -39,12 +39,13 @@ class CNN(torch.nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
 
-        self.conv1 = torch.nn.Conv2d(1, 6, 5) # feature map will have size 24*24
-        self.avgPool1 = torch.nn.AvgPool2d(2,2) # down sampled to size 12*12
-        self.conv2 = torch.nn.Conv2d(6, 16, 5) # featur map will have size 8*8
-        self.avgPool2 = torch.nn.AvgPool2d(2,2) # down sampled to size 4*4
+        # feature map will have size 24*24
+        self.conv1 = torch.nn.Conv2d(1, 6, 5)
+        self.avgPool1 = torch.nn.AvgPool2d(2, 2)  # down sampled to size 12*12
+        self.conv2 = torch.nn.Conv2d(6, 16, 5)  # featur map will have size 8*8
+        self.avgPool2 = torch.nn.AvgPool2d(2, 2)  # down sampled to size 4*4
 
-        self.fc1 = torch.nn.Linear(16 * 4 * 4, 120)  
+        self.fc1 = torch.nn.Linear(16 * 4 * 4, 120)
         self.fc2 = torch.nn.Linear(120, 84)
         self.fc3 = torch.nn.Linear(84, 10)
 
@@ -61,6 +62,7 @@ class CNN(torch.nn.Module):
         X = self.fc3(X)
         return X
 
+
 cnn = CNN()
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(cnn.parameters(), lr=0.01)
@@ -74,10 +76,9 @@ for epoch in range(num_epoch):  # 20 epochs
 
     # batch size of 64, takes 938 iterations to go through whole dataset
     for batch in range(60000//batch_size + 1):
-        # print("batch", batch,end=": ")
         if batch != 60000//batch_size:
             this_batch_size = batch_size
-            input = np.zeros(batch_size*28*28).reshape(batch_size,1,28,28)
+            input = np.zeros(batch_size*28*28).reshape(batch_size, 1, 28, 28)
             input = torch.from_numpy(input)
             for i in range(batch_size):
                 input[i] = full_train_data[permutation[batch*batch_size+i]]
@@ -92,7 +93,7 @@ for epoch in range(num_epoch):  # 20 epochs
         else:
             this_batch_size = 60000-batch*batch_size
             input = np.zeros(this_batch_size*28 *
-                             28).reshape(this_batch_size,1,28,28)
+                             28).reshape(this_batch_size, 1, 28, 28)
             for i in range(this_batch_size):
                 input[i] = full_train_data[permutation[batch*batch_size+i]]
             input = torch.from_numpy(input)
@@ -117,3 +118,20 @@ for epoch in range(num_epoch):  # 20 epochs
 test_prediction = cnn(full_test_data)
 test_loss = criterion(test_prediction, full_test_target)
 print("the loss on test data is", test_loss.item())
+
+predicted_numbers = []
+for i in range(10000):
+    predicted_number = torch.argmax(test_prediction[i]).item()
+    predicted_numbers.append(predicted_number)
+predicted_numbers = np.array(predicted_numbers)
+
+num_error = 0
+for truth, prediction in zip(test_labels, predicted_numbers):
+    if truth != prediction:
+        num_error += 1
+print("The accuracy on the testing data is", 1-num_error/10000)
+
+"""
+the loss on test data is 0.09200327463574685
+The accuracy on the testing data is 0.9716
+"""
