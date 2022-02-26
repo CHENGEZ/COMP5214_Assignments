@@ -57,20 +57,22 @@ for epoch in range(num_epoch): # 20 epochs
     permutation = torch.randperm(60000)
     print("epoch", epoch, end=":")
 
-    for batch in range(60000//batch_size): # batch size of 64, takes 937 iterations to go through whole dataset
-        if batch != 60000//batch_size-1:
+    for batch in range(60000//batch_size + 1): # batch size of 64, takes 938 iterations to go through whole dataset
+        if batch != 60000//batch_size:
             input = full_train_data[permutation[batch*batch_size]:permutation[(batch+1)*batch_size]]
             target = full_train_target[permutation[batch*batch_size]:permutation[(batch+1)*batch_size]]
+            this_batch_size = batch_size
         else:
             input= full_train_data[permutation[batch*batch_size]:]
             target = full_train_target[permutation[batch*batch_size]:]
+            this_batch_size = 60000-batch*batch_size
         optimizer.zero_grad()
         prediction = mlp(input)
         loss = criterion(prediction,target)
         loss.backward()
         optimizer.step()
-    print("the loss is",loss)
+    print("the loss is",loss/this_batch_size)
 
 test_prediction = mlp(full_test_data)
 test_loss = criterion(test_prediction, full_test_target)
-print("the loss on test data is", test_loss)
+print("the loss on test data is", test_loss/10000)
