@@ -5,8 +5,6 @@ from FileLoader import *
 
 batch_size = 64
 num_epoch = 20
-# adjust to plot a curve of accuracy versus the number of neurons: 4, 8, 16, 32, 64, 128, and 256
-num_of_neurons_in_hidden = 256
 
 
 train_images, train_labels = load_train_data()
@@ -32,39 +30,54 @@ for i in range(10000):
 full_test_target = np.array(full_test_target)
 full_test_target = torch.from_numpy(full_test_target)
 
+full_train_data = full_train_data.reshape(60000,1,28,28)
+full_test_data = full_test_data.reshape(10000,1,28,28)
 
-class MLPClassifier(torch.nn.Module):
+
+class CNN(torch.nn.Module):
+
     def __init__(self):
-        super(MLPClassifier, self).__init__()
-        self.fcl1 = torch.nn.Linear(28*28, num_of_neurons_in_hidden)
-        self.fcl2 = torch.nn.Linear(
-            num_of_neurons_in_hidden, num_of_neurons_in_hidden)
-        self.fcl3 = torch.nn.Linear(num_of_neurons_in_hidden, 10)
+        super(CNN, self).__init__()
+
+        self.conv1 = torch.nn.Conv2d(1, 6, 5) # feature map will have size 24*24
+        self.avgPool1 = torch.nn.AvgPool2d(2,2) # down sampled to size 12*12
+        self.conv2 = torch.nn.Conv2d(6, 16, 5) # featur map will have size 8*8
+        self.avgPool2 = torch.nn.AvgPool2d(2,2) # down sampled to size 4*4
+
+        self.fc1 = torch.nn.Linear(16 * 4 * 4, 120)  
+        self.fc2 = torch.nn.Linear(120, 84)
+        self.fc3 = torch.nn.Linear(84, 10)
 
     def forward(self, X):
-        X = self.fcl1(X)
-        X = torch.nn.functional.relu(X)
-        X = self.fcl2(X)
-        X = torch.nn.functional.relu(X)
-        X = self.fcl3(X)
+        X = self.conv1(X)
+        X = self.avgPool1(X)
+        X = self.conv2(X)
+        X = self.avgPool2(X)
+        X = torch.flatten(X, 1)
+        X = self.fc1(X)
+        X = torch.tanh(X)
+        X = self.fc2(X)
+        X = torch.tanh(X)
+        X = self.fc3(X)
         return X
 
-
-mlp = MLPClassifier()
+cnn = CNN()
 criterion = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(mlp.parameters(), lr=0.01)
+optimizer = torch.optim.SGD(cnn.parameters(), lr=0.01)
 
-# training loop
+
+# the trainning loop
 for epoch in range(num_epoch):  # 20 epochs
-    mlp.train()
+    cnn.train()
     permutation = torch.randperm(60000)
     train_loss_in_this_epoch = 0.0
 
     # batch size of 64, takes 938 iterations to go through whole dataset
     for batch in range(60000//batch_size + 1):
+        # print("batch", batch,end=": ")
         if batch != 60000//batch_size:
             this_batch_size = batch_size
-            input = np.zeros(batch_size*28*28).reshape(batch_size, 28*28)
+            input = np.zeros(batch_size*28*28).reshape(batch_size,1,28,28)
             input = torch.from_numpy(input)
             for i in range(batch_size):
                 input[i] = full_train_data[permutation[batch*batch_size+i]]
@@ -79,7 +92,7 @@ for epoch in range(num_epoch):  # 20 epochs
         else:
             this_batch_size = 60000-batch*batch_size
             input = np.zeros(this_batch_size*28 *
-                             28).reshape(this_batch_size, 28*28)
+                             28).reshape(this_batch_size,1,28,28)
             for i in range(this_batch_size):
                 input[i] = full_train_data[permutation[batch*batch_size+i]]
             input = torch.from_numpy(input)
@@ -92,7 +105,7 @@ for epoch in range(num_epoch):  # 20 epochs
             target = target.to(torch.float32)
 
         optimizer.zero_grad()
-        prediction = mlp(input)
+        prediction = cnn(input)
         loss = criterion(prediction, target)
         loss.backward()
         optimizer.step()
@@ -101,20 +114,6 @@ for epoch in range(num_epoch):  # 20 epochs
     print("epoch", epoch, end=": ")
     print("the loss is", train_loss_in_this_epoch/60000)
 
-test_prediction = mlp(full_test_data)
+test_prediction = cnn(full_test_data)
 test_loss = criterion(test_prediction, full_test_target)
 print("the loss on test data is", test_loss.item())
-
-
-"""
-test accuract depending on differnet num_of_neurons_in_hidden
-4: the loss on test data is 0.5520997686341712
-8: the loss on test data is 0.2870218555975418
-16: the loss on test data is 0.19988575598033148
-32: the loss on test data is 0.165200721723496
-64: the loss on test data is 0.15033791905283514
-128: the loss on test data is 0.14072852918090104
-256: the loss on test data is 0.13293400765137472
-
-without trainning: the loss on test data is 2.303080479717255
-"""
