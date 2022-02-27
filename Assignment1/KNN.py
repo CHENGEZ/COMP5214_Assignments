@@ -25,7 +25,7 @@ for K in range(1, 11):
 fig, axs = plt.subplots(1, 1)
 k = np.arange(1, 11, 1)
 
-fig.suptitle(r"error rate for different 'K'", fontsize=20)
-axs.plot(k, errors/10000)  # Plot the graph
+fig.suptitle(r"accuracy for different 'K'", fontsize=20)
+axs.plot(k, 1 - errors/10000)  # Plot the graph
 
 plt.show()
