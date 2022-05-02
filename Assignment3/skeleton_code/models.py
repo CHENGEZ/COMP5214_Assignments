@@ -41,14 +41,17 @@ def conv(in_channels, out_channels, kernel_size, stride=2, padding=1, batch_norm
 
 
 class DCGenerator(nn.Module):
-    def __init__(self):
+    def __init__(self, noise_size, conv_dim):
         super(DCGenerator, self).__init__()
 
         ###########################################
         ##   FILL THIS IN: CREATE ARCHITECTURE   ##
         ###########################################
-
-
+        self.deconv1 = deconv(in_channels=100, out_channels=128,stride=1, kernel_size=4, padding=0, batch_norm=True)
+        self.deconv2 = deconv(in_channels=128, out_channels=64, stride=1, kernel_size=5, padding=0, batch_norm=True)
+        self.deconv3 = deconv(in_channels=64, out_channels=32, stride=2, kernel_size=4, padding=1, batch_norm=True)
+        self.deconv4 = deconv(in_channels=32, out_channels=3, stride=2, kernel_size=4, padding=1, batch_norm=False)
+            
     def forward(self, z):
         """Generates an image given a sample of random noise.
 
@@ -82,6 +85,7 @@ class CycleGenerator(nn.Module):
     """Defines the architecture of the generator network.
        Note: Both generators G_XtoY and G_YtoX have the same architecture in this assignment.
     """
+
     def __init__(self):
         super(CycleGenerator, self).__init__()
 
@@ -92,9 +96,8 @@ class CycleGenerator(nn.Module):
         # 1. Define the encoder part of the generator (that extracts features from the input image)
 
         # 2. Define the transformation part of the generator
-        
-        # 3. Define the decoder part of the generator (that builds up the output image from features)
 
+        # 3. Define the decoder part of the generator (that builds up the output image from features)
 
     def forward(self, x):
         """Generates an image conditioned on an input image.
@@ -123,12 +126,17 @@ class DCDiscriminator(nn.Module):
     """Defines the architecture of the discriminator network.
        Note: Both discriminators D_X and D_Y have the same architecture in this assignment.
     """
-    def __init__(self):
+
+    def __init__(self, conv_dim=32):
         super(DCDiscriminator, self).__init__()
 
         ###########################################
         ##   FILL THIS IN: CREATE ARCHITECTURE   ##
         ###########################################
+        self.conv1 = conv(in_channels=3, out_channels=conv_dim, kernel_size=5, stride=2, padding=2, batch_norm=True)
+        self.conv2 = conv(in_channels=conv_dim, out_channels=2*conv_dim, kernel_size=5, stride=2, padding=2, batch_norm=True)
+        self.conv3 = conv(in_channels=2*conv_dim, out_channels=4*conv_dim, kernel_size=5, stride=2, padding=2, batch_norm=True)
+        self.conv4 = conv(in_channels=4*conv_dim, out_channels=1, kernel_size=5, stride=2, padding=1, batch_norm=False)
 
     def forward(self, x):
 
@@ -139,4 +147,3 @@ class DCDiscriminator(nn.Module):
         out = self.conv4(out).squeeze()
         out = F.sigmoid(out)
         return out
-
