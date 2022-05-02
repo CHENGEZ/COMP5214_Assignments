@@ -60,23 +60,24 @@ def train(train_loader, opt, device):
             d_optimizer.zero_grad()
 
             # FILL THIS IN
-            # 1. Compute the discriminator loss on real images
-            # D_real_loss = ...
-            
+            # print(type(real_images),real_images.shape)
+            # print(type(fixed_noise), fixed_noise.shape)
 
-            # 2. Sample noise
-            # noise = ...
+            m = opt.batch_size
+            # 1. Compute the discriminator loss on real images
+            D_real_loss = torch.sum(torch.square(D(real_images) - 1))/(2*m)
             
+            # 2. Sample noise (m noise samples from the noise distribution)
+            noise = sample_noise(m, opts.noise_size)
 
             # 3. Generate fake images from the noise
-            # fake_images = ...
+            fake_images = G(noise)
 
             # 4. Compute the discriminator loss on the fake images
-            # D_fake_loss = ...
-            
+            D_fake_loss = torch.sum(torch.square(D(fake_images)))/(2*m)
 
             # 5. Compute the total discriminator loss
-            # D_total_loss = ...
+            D_total_loss = D_real_loss + D_fake_loss
     
             D_total_loss.backward()
             d_optimizer.step()
@@ -89,14 +90,13 @@ def train(train_loader, opt, device):
 
             # FILL THIS IN
             # 1. Sample noise
-            # noise = ...
-            
+            noise = sample_noise(m, opts.noise_size)
 
             # 2. Generate fake images from the noise
-            # fake_images = ...
+            fake_images = G(noise)
             
             # 3. Compute the generator loss
-            # G_loss = ...
+            G_loss = torch.sum(torch.square(D(fake_images) - 1))/m
 
             G_loss.backward()
             g_optimizer.step()
@@ -133,7 +133,8 @@ def main(opts):
     if torch.cuda.is_available():
         device = torch.device('cpu')
     else:
-        device = torch.device('cuda')
+        # device = torch.device('cuda')
+        device = torch.device('cpu')
 
     train(train_loader, opts, device)
 
@@ -149,7 +150,7 @@ def create_parser():
     parser.add_argument('--noise_size', type=int, default=100)
 
     # Training hyper-parameters
-    parser.add_argument('--num_epochs', type=int, default=1000)
+    parser.add_argument('--num_epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
     parser.add_argument('--num_workers', type=int, default=0, help='The number of threads to use for the DataLoader.')
     parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
