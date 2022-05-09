@@ -189,7 +189,6 @@ if __name__ == '__main__':
     D_real_losses =[]
     D_fake_losses=[]
     G_losses = []
-    D_total_losses = np.add(D_real_losses, D_fake_losses)
 
     print(opts)
     main(opts)
@@ -198,10 +197,12 @@ if __name__ == '__main__':
     fig.suptitle(r"loss change with epochs", fontsize=20)
     epochs = np.arange(1, opts.num_epochs+1, 1)
 
+    D_total_losses = np.add(D_real_losses, D_fake_losses)
     axs.plot(epochs, D_real_losses) 
     axs.plot(epochs, D_fake_losses) 
     axs.plot(epochs, G_losses)
     axs.plot(epochs, D_total_losses)
+    
     plt.xlabel("epoch")
     plt.ylabel("Loss")
     plt.legend(['Descriminator Real Loss','Descriminator Fake Loss','Generator Loss', "Descriminator Total Loss"], loc='lower right')
