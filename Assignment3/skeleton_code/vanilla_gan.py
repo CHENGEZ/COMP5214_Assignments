@@ -48,7 +48,9 @@ def train(train_loader, opt, device):
     total_train_iters = opts.num_epochs * len(train_loader)
     
     for epoch in range(opts.num_epochs):
-
+        total_G_loss_in_this_epoch  = 0
+        total_D_real_loss_in_this_epoch = 0
+        total_D_fake_loss_in_this_epoch = 0
         for batch in train_loader:
 
             real_images = batch[0].to(device)
@@ -78,7 +80,9 @@ def train(train_loader, opt, device):
 
             # 5. Compute the total discriminator loss
             D_total_loss = D_real_loss + D_fake_loss
-    
+
+            total_D_real_loss_in_this_epoch+=D_real_loss
+            total_D_fake_loss_in_this_epoch+=D_fake_loss
             D_total_loss.backward()
             d_optimizer.step()
 
@@ -98,6 +102,7 @@ def train(train_loader, opt, device):
             # 3. Compute the generator loss
             G_loss = torch.sum(torch.square(D(fake_images) - 1))/m
 
+            total_G_loss_in_this_epoch+=G_loss
             G_loss.backward()
             g_optimizer.step()
 
@@ -116,8 +121,11 @@ def train(train_loader, opt, device):
                 checkpoint(iteration, G, D, opts)
 
             iteration += 1
-    
-    
+
+        G_losses.append((total_G_loss_in_this_epoch/len(train_loader)).item())
+        D_real_losses.append((total_D_real_loss_in_this_epoch/len(train_loader)).item())
+        D_fake_losses.append((total_D_fake_loss_in_this_epoch/len(train_loader)).item())
+        
     
 def main(opts):
     """Loads the data, creates checkpoint and sample directories, and starts the training loop.
@@ -150,10 +158,10 @@ def create_parser():
     parser.add_argument('--noise_size', type=int, default=100)
 
     # Training hyper-parameters
-    parser.add_argument('--num_epochs', type=int, default=50)
+    parser.add_argument('--num_epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
     parser.add_argument('--num_workers', type=int, default=0, help='The number of threads to use for the DataLoader.')
-    parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
+    parser.add_argument('--lr', type=float, default=0.001, help='The learning rate (default 0.0003)')
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)
 
@@ -171,12 +179,30 @@ def create_parser():
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
 
     parser = create_parser()
     opts = parser.parse_args()
 
     batch_size = opts.batch_size
 
+    D_real_losses =[]
+    D_fake_losses=[]
+    G_losses = []
+    D_total_losses = np.add(D_real_losses, D_fake_losses)
+
     print(opts)
     main(opts)
 
+    fig, axs = plt.subplots(1, 1)
+    fig.suptitle(r"loss change with epochs", fontsize=20)
+    epochs = np.arange(1, opts.num_epochs+1, 1)
+
+    axs.plot(epochs, D_real_losses) 
+    axs.plot(epochs, D_fake_losses) 
+    axs.plot(epochs, G_losses)
+    axs.plot(epochs, D_total_losses)
+    plt.xlabel("epoch")
+    plt.ylabel("Loss")
+    plt.legend(['Descriminator Real Loss','Descriminator Fake Loss','Generator Loss', "Descriminator Total Loss"], loc='lower right')
+    plt.show()
