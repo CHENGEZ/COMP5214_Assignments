@@ -1,4 +1,8 @@
 import os
+
+from cv2 import merge
+
+import imageio
 import torch
 import scipy
 import scipy.misc
@@ -19,8 +23,8 @@ def create_dir(directory):
 def create_model(opts):
     """Builds the generators and discriminators.
     """
-    G_XtoY = CycleGenerator(conv_dim=opts.g_conv_dim, init_zero_weights=opts.init_zero_weights)
-    G_YtoX = CycleGenerator(conv_dim=opts.g_conv_dim, init_zero_weights=opts.init_zero_weights)
+    G_XtoY = CycleGenerator()
+    G_YtoX = CycleGenerator()
     D_X = DCDiscriminator(conv_dim=opts.d_conv_dim)
     D_Y = DCDiscriminator(conv_dim=opts.d_conv_dim)
 
@@ -67,11 +71,11 @@ def save_samples(iteration, fixed_Y, fixed_X, G_YtoX, G_XtoY, opts):
 
     merged = merge_images(X, fake_Y, opts)
     path = os.path.join(opts.sample_dir, 'sample-{:06d}-X-Y.png'.format(iteration))
-    scipy.misc.imsave(path, merged)
+    imageio.imwrite(path,merged)
     print('Saved {}'.format(path))
 
     merged = merge_images(Y, fake_X, opts)
     path = os.path.join(opts.sample_dir, 'sample-{:06d}-Y-X.png'.format(iteration))
-    scipy.misc.imsave(path, merged)
+    imageio.imwrite(path,merged)
     print('Saved {}'.format(path))
 

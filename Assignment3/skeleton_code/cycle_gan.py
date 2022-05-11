@@ -16,6 +16,8 @@
 import os
 import argparse
 import warnings
+
+from torch import square
 warnings.filterwarnings("ignore")
 
 # Torch imports
@@ -95,10 +97,11 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         # Train with real images
 
         # 1. Compute the discriminator losses on real images
-        # D_X_loss = ...
-        # D_Y_loss = ...
+        D_X_loss = torch.mean(torch.sum(torch.square(D_X(images_X)-1)))
+        D_Y_loss = torch.mean(torch.sum(torch.square(D_Y(images_Y)-1)))
 
         d_real_loss = D_X_loss + D_Y_loss
+        D_real_losses.append(d_real_loss.item())
         d_real_loss.backward()
         d_optimizer.step()
 
@@ -106,18 +109,19 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         d_optimizer.zero_grad()
 
         # 2. Generate fake images that look like domain X based on real images in domain Y
-        # fake_X = ...
+        fake_X = G_YtoX(images_Y)
 
         # 3. Compute the loss for D_X
-        # D_X_loss = ...
+        D_X_loss = torch.mean(torch.sum(torch.square(D_X(fake_X))))
 
         # 4. Generate fake images that look like domain Y based on real images in domain X
-        # fake_Y = ...
+        fake_Y = G_XtoY(images_X)
 
         # 5. Compute the loss for D_Y
-        # D_Y_loss = ...
+        D_Y_loss = torch.mean(torch.sum(torch.square(D_Y(fake_Y))))
 
         d_fake_loss = D_X_loss + D_Y_loss
+        D_fake_losses.append(d_fake_loss.item())
         d_fake_loss.backward()
         d_optimizer.step()
 
@@ -134,16 +138,16 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         g_optimizer.zero_grad()
 
         # 1. Generate fake images that look like domain X based on real images in domain Y
-        # fake_X = ...
+        fake_X = G_YtoX(images_Y)
 
         # 2. Compute the generator loss based on domain X
-        # g_loss = ...
+        g_loss = torch.mean(torch.sum(torch.square(D_X(fake_X)-1)))
 
         # 3. Compute the cycle consistency loss (the reconstruction loss)
-        # cycle_consistency_loss = ...
+        cycle_consistency_loss = torch.mean(torch.sum(torch.square(images_Y-G_XtoY(fake_X))))
 
         g_loss += cycle_consistency_loss
-
+        G_Y2X_losses.append(g_loss.item())
         g_loss.backward()
         g_optimizer.step()
 
@@ -154,16 +158,16 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         g_optimizer.zero_grad()
 
         # 1. Generate fake images that look like domain Y based on real images in domain X
-        # fake_Y = ...
+        fake_Y = G_XtoY(images_X)
 
         # 2. Compute the generator loss based on domain Y
-        # g_loss = ...
+        g_loss = torch.mean(torch.sum(torch.square(D_Y(fake_Y)-1)))
 
         # 3. Compute the cycle consistency loss (the reconstruction loss)
-        # cycle_consistency_loss = ...
+        cycle_consistency_loss = torch.mean(torch.sum(torch.square(images_X-G_YtoX(fake_Y))))
         
         g_loss += cycle_consistency_loss
-
+        G_X2Y_losses.append(g_loss.item())
         g_loss.backward()
         g_optimizer.step()
 
@@ -233,10 +237,10 @@ def create_parser():
     parser.add_argument('--init_zero_weights', action='store_true', default=False, help='Choose whether to initialize the generator conv weights to 0 (implements the identity function).')
 
     # Training hyper-parameters
-    parser.add_argument('--train_iters', type=int, default=100000, help='The number of training iterations to run (you can Ctrl-C out earlier if you want).')
+    parser.add_argument('--train_iters', type=int, default=5000, help='The number of training iterations to run (you can Ctrl-C out earlier if you want).')
     parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
     parser.add_argument('--num_workers', type=int, default=0, help='The number of threads to use for the DataLoader.')
-    parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
+    parser.add_argument('--lr', type=float, default=0.001, help='The learning rate (default 0.0003)')
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)
 
@@ -255,10 +259,29 @@ def create_parser():
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
 
     parser = create_parser()
     opts = parser.parse_args()
 
+    D_real_losses =[]
+    D_fake_losses=[]
+    G_Y2X_losses = []
+    G_X2Y_losses = []
+
     print_opts(opts)
     main(opts)
 
+    fig, axs = plt.subplots(1, 1)
+    fig.suptitle(r"loss change with training iteration", fontsize=20)
+    epochs = np.arange(1, opts.train_iters+1, 1)
+
+    axs.plot(epochs, D_real_losses) 
+    axs.plot(epochs, D_fake_losses) 
+    axs.plot(epochs, G_Y2X_losses)
+    axs.plot(epochs, G_X2Y_losses)
+    
+    plt.xlabel("Iteration")
+    plt.ylabel("Loss")
+    plt.legend(['Descriminator Real Loss','Descriminator Fake Loss','Generator Y->X Loss', "Generator x->Y Loss"], loc='upper right')
+    plt.show()

@@ -205,5 +205,5 @@ if __name__ == '__main__':
     
     plt.xlabel("epoch")
     plt.ylabel("Loss")
-    plt.legend(['Descriminator Real Loss','Descriminator Fake Loss','Generator Loss', "Descriminator Total Loss"], loc='lower right')
+    plt.legend(['Descriminator Real Loss','Descriminator Fake Loss','Generator Loss', "Descriminator Total Loss"], loc='upper right')
     plt.show()
