@@ -3,5 +3,5 @@ Referrence_Code/
 reuters/
 *.idx3-ubyte
 *.idx1-ubyte
-Assignment3/SKELETON_CODE/checkpoints_vanilla/
-Assignment3/SKELETON_CODE/samples_vanilla/
+Assignment3/SKELETON_CODE/checkpoints*
+Assignment3/SKELETON_CODE/samples*
