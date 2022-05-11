@@ -95,10 +95,10 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         #########################################
 
         # Train with real images
-
+        m = len(images_X)
         # 1. Compute the discriminator losses on real images
-        D_X_loss = torch.mean(torch.sum(torch.square(D_X(images_X)-1)))
-        D_Y_loss = torch.mean(torch.sum(torch.square(D_Y(images_Y)-1)))
+        D_X_loss = torch.sum(torch.square(D_X(images_X)-1))/m
+        D_Y_loss = torch.sum(torch.square(D_Y(images_Y)-1))/m
 
         d_real_loss = D_X_loss + D_Y_loss
         D_real_losses.append(d_real_loss.item())
@@ -112,13 +112,13 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         fake_X = G_YtoX(images_Y)
 
         # 3. Compute the loss for D_X
-        D_X_loss = torch.mean(torch.sum(torch.square(D_X(fake_X))))
+        D_X_loss = torch.sum(torch.square(D_X(fake_X)))/m
 
         # 4. Generate fake images that look like domain Y based on real images in domain X
         fake_Y = G_XtoY(images_X)
 
         # 5. Compute the loss for D_Y
-        D_Y_loss = torch.mean(torch.sum(torch.square(D_Y(fake_Y))))
+        D_Y_loss = torch.sum(torch.square(D_Y(fake_Y)))/m
 
         d_fake_loss = D_X_loss + D_Y_loss
         D_fake_losses.append(d_fake_loss.item())
@@ -141,10 +141,10 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         fake_X = G_YtoX(images_Y)
 
         # 2. Compute the generator loss based on domain X
-        g_loss = torch.mean(torch.sum(torch.square(D_X(fake_X)-1)))
+        g_loss = torch.sum(torch.square(D_X(fake_X)-1))/m
 
         # 3. Compute the cycle consistency loss (the reconstruction loss)
-        cycle_consistency_loss = torch.mean(torch.sum(torch.square(images_Y-G_XtoY(fake_X))))
+        cycle_consistency_loss = torch.sum(torch.square(images_Y-G_XtoY(fake_X)))/m
 
         g_loss += cycle_consistency_loss
         G_Y2X_losses.append(g_loss.item())
@@ -161,10 +161,10 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         fake_Y = G_XtoY(images_X)
 
         # 2. Compute the generator loss based on domain Y
-        g_loss = torch.mean(torch.sum(torch.square(D_Y(fake_Y)-1)))
+        g_loss = torch.sum(torch.square(D_Y(fake_Y)-1))/m
 
         # 3. Compute the cycle consistency loss (the reconstruction loss)
-        cycle_consistency_loss = torch.mean(torch.sum(torch.square(images_X-G_YtoX(fake_Y))))
+        cycle_consistency_loss = torch.sum(torch.square(images_X-G_YtoX(fake_Y)))/m
         
         g_loss += cycle_consistency_loss
         G_X2Y_losses.append(g_loss.item())
